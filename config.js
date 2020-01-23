@@ -1,0 +1,19 @@
+const {
+  SHEET_KEY,
+  JIRA_URL,
+  QUERY,
+  JIRA_USER,
+  JIRA_PASSWORD,
+  TEAM_LABELS,
+  PROJECTS
+} = process.env;
+
+module.exports = {
+  SHEET_KEY: SHEET_KEY,
+  JIRA_URL: JIRA_URL,
+  QUERY: QUERY,
+  JIRA_USER: JIRA_USER,
+  JIRA_PASSWORD: JIRA_PASSWORD,
+  TEAM_LABELS: TEAM_LABELS ? TEAM_LABELS.split(',') : undefined,
+  PROJECTS: PROJECTS ? PROJECTS.split(',') : undefined
+};
