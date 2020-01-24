@@ -1,7 +1,14 @@
 const moment = require('moment');
 const momentDurationFormatSetup = require('moment-duration-format');
+const _ = require('lodash');
 
 momentDurationFormatSetup(moment);
+
+function humanFriendlyTimeFormat(timeInput) {
+  const duration = moment.duration(timeInput);
+
+  return duration.format('dd [dias, ] hh [horas e] mm [m]');
+}
 
 function timeDifference(posteriorDate, initialDate) {
   if (!(posteriorDate && initialDate)) {
@@ -11,11 +18,12 @@ function timeDifference(posteriorDate, initialDate) {
   let initialDateMoment = moment(initialDate, 'DD/MM/YYYY HH:mm:ss');
   let posteriorDateMoment = moment(posteriorDate, 'DD/MM/YYYY HH:mm:ss');
 
-  let timeDifference = moment.duration(
-    posteriorDateMoment.diff(initialDateMoment)
-  );
+  const timeDifference = posteriorDateMoment.diff(initialDateMoment);
 
-  return timeDifference.format('dd [dias, ] hh [horas e] mm [m]');
+  return {
+    timeDifference,
+    inFriendlyFormat: humanFriendlyTimeFormat(timeDifference)
+  };
 }
 
 function calculateCycleTime(issue) {
@@ -83,24 +91,96 @@ function calculateVelocity(issues) {
   return velocity;
 }
 
-function processAllIssues(issues) {
-  const stats = {
-    issues: {}
-  };
+function calculateMeanCycleTime(issuesStats) {
+  const meanCycleTimeDuration = _.meanBy(
+    Object.values(issuesStats),
+    i => i.cycleTime.timeDifference
+  );
 
-  for (const issue of issues) {
+  return humanFriendlyTimeFormat(meanCycleTimeDuration);
+}
+function calculateMeanLeadTime(issuesStats) {
+  const meanLeadTimeDuration = _.meanBy(
+    Object.values(issuesStats),
+    i => i.leadTime.timeDifference
+  );
+
+  return humanFriendlyTimeFormat(meanLeadTimeDuration);
+}
+
+function calculateMetricsPerSize(issuesDetails, issuesStats) {
+  const statsWithSizeAppended = [];
+
+  Object.keys(issuesStats).forEach(i => {
+    const accountableIssue = issuesDetails.find(d => d.code === i);
+    if (!accountableIssue) return;
+
+    statsWithSizeAppended.push({
+      estimatedSize: accountableIssue.estimatedSize,
+      ...issuesStats[i]
+    });
+  });
+
+  const issuesBySize = _.groupBy(statsWithSizeAppended, i => i.estimatedSize);
+
+  const cycleTime = {};
+  const leadTime = {};
+
+  Object.keys(issuesBySize).forEach(size => {
+    const issuesListPerSizeWithStats = issuesBySize[size];
+
+    Object.assign(cycleTime, {
+      [size]: {
+        mean: calculateMeanCycleTime(issuesListPerSizeWithStats),
+        totalCount: issuesListPerSizeWithStats.length
+      }
+    });
+    Object.assign(leadTime, {
+      [size]: {
+        mean: calculateMeanLeadTime(issuesListPerSizeWithStats),
+        totalCount: issuesListPerSizeWithStats.length
+      }
+    });
+  });
+
+  return {
+    cycleTime,
+    leadTime
+  };
+}
+
+function processAllIssues(issues) {
+  const stats = {};
+
+  const resolvedIssues = extractResolvedIssues(issues);
+  const estimatedIssues = extractNonSubTasksIssues(resolvedIssues);
+
+  const issuesStats = {};
+  for (const issue of estimatedIssues) {
     const cycleTime = calculateCycleTime(issue);
     const leadTime = calculateLeadTime(issue);
 
-    stats.issues[issue.code] = {
+    issuesStats[issue.code] = {
       leadTime,
       cycleTime
     };
   }
 
+  const metricsPerSize = calculateMetricsPerSize(estimatedIssues, issuesStats);
+  stats.cycleTime = {
+    mean: calculateMeanCycleTime(issuesStats),
+    perSize: metricsPerSize.cycleTime
+  };
+
+  stats.leadTime = {
+    mean: calculateMeanLeadTime(issuesStats),
+    perSize: metricsPerSize.leadTime
+  };
+
   stats.alignmentWithOkr = calculateOkrAlignment(issues);
   stats.totalStories = calculateTotalByIssueType(issues, 'Story');
   stats.totalTasks = calculateTotalByIssueType(issues, 'Task');
+  stats.totalSubTasks = calculateTotalByIssueType(issues, 'Sub-task');
   stats.totalIssues = extractNonSubTasksIssues(issues).length;
   stats.totalIssuesResolved = calculateTotalByStatus(issues, 'Resolved');
   stats.velocity = calculateVelocity(issues);
