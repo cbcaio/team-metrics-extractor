@@ -40,10 +40,10 @@ function isSubTask(issue) {
 }
 
 function extractPointsInTime(changelog) {
-  const extractPointsInTime = {};
+  const pointsInTime = {};
   const histories = changelog.histories;
-  histories.forEach(element => {
-    element.items.forEach(history => {
+  histories.forEach(h => {
+    h.items.forEach(history => {
       const { fromString, toString, field } = history;
 
       if (field !== 'status') {
@@ -51,21 +51,21 @@ function extractPointsInTime(changelog) {
       }
 
       if (fromString === 'Open' && toString === 'In Progress') {
-        extractPointsInTime.cycleTimeStart = asDatetime(element.created);
+        pointsInTime.cycleTimeStart = asDatetime(h.created);
       }
 
       if (toString === 'Resolved') {
-        extractPointsInTime.leadTimeStop = asDatetime(element.created);
-        extractPointsInTime.cycleTimeStop = asDatetime(element.created);
+        pointsInTime.leadTimeStop = asDatetime(h.created);
+        pointsInTime.cycleTimeStop = asDatetime(h.created);
       }
 
       if (toString === 'Cancelled') {
-        extractPointsInTime.cancelled = true;
+        pointsInTime.cancelled = true;
       }
     });
   });
 
-  return extractPointsInTime;
+  return pointsInTime;
 }
 
 function isIssueAlignedWithOkr(issue) {
@@ -87,6 +87,20 @@ function extractEstimatedSize(issue) {
   return Number(estimatedSize);
 }
 
+function handleExceptions(transformedIssue) {
+  const issue = { ...transformedIssue };
+  const {
+    leadTimeStop,
+    cycleTimeStart
+  } = issue;
+
+  if (leadTimeStop && !cycleTimeStart) {
+    issue.cycleTimeStart = issue.leadTimeStart;
+  }
+
+  return issue;
+}
+
 module.exports = function issueTransformer(issue) {
   try {
     const mappedFields = map(issue);
@@ -106,7 +120,9 @@ module.exports = function issueTransformer(issue) {
       estimatedSize
     };
 
-    return transformedIssue;
+    const finalIssueDetails = handleExceptions(transformedIssue);
+
+    return finalIssueDetails;
   } catch (e) {
     console.log('Error transforming issue');
     console.error(e);
