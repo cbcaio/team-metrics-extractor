@@ -7,8 +7,6 @@ class JiraServiceBase {
     this.apiUrl = config.JIRA_URL;
     this.user = config.JIRA_USER;
     this.password = config.JIRA_PASSWORD;
-
-    console.log('Loaded Jira Class');
   }
 
   auth() {
