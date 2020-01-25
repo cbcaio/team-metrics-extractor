@@ -1,8 +1,12 @@
 {
   "name": "team-metrics-extractor",
   "version": "1.0.0",
+  "author": "Caio C. Bolognani",
+  "license": "MIT",
   "description": "Tool created to help extract team metrics from Jira",
-  "main": "index.js",
+  "scripts": {
+    "start": "node index"
+  },
   "dependencies": {
     "axios": "^0.19.2",
     "dotenv": "^8.2.0",
@@ -11,10 +15,5 @@
     "moment": "^2.24.0",
     "moment-duration-format": "^2.3.2"
   },
-  "devDependencies": {},
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "author": "Caio C. Bolognani",
-  "license": "MIT"
+  "devDependencies": {}
 }
