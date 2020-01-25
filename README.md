@@ -13,7 +13,8 @@ Se voce usa o Jira como ferramenta de escolha, porém não está satisfeito com 
 
 ### Métricas extraidas:
 
-1. Resumo da Sprint
+*Resumo da Sprint*
+
   - objetivo cumprido
   - % da sprint finalizada
   - alinhamento com OKR
@@ -21,7 +22,8 @@ Se voce usa o Jira como ferramenta de escolha, porém não está satisfeito com 
   - cycle time médio
   - lead time médio
 
-2. Detalhes da Sprint
+*Detalhes da Sprint*
+
   - total de issues
   - total de issue finalizados
   - total de Historias
@@ -57,6 +59,13 @@ Siga os passos:
   2. Cria seu arquivo `.env`
   3. Crie seu arquivo `credentials.json`
   4. `npm run start`
+
+## Próximos Passos
+
+- Adicionar opção para relátorio por time-range
+- Melhorar customização para outros times
+- Descobrir se é possível formatar estilo da planilha
+
 
 ## Importante
 
