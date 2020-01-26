@@ -20,7 +20,9 @@ class GoogleSheets {
     const getInfo = promisify(this.sheetsService.getInfo);
 
     const info = await getInfo();
-    console.log('     Loaded document: ' + info.title + ' by ' + info.author.email);
+    console.log(
+      '     Loaded document: ' + info.title + ' by ' + info.author.email
+    );
 
     return info;
   }
@@ -42,8 +44,10 @@ class GoogleSheets {
     this.targetWorksheet = worksheet;
   }
 
-  defineHeaderRow(list) {
-    return this.targetWorksheet.setHeaderRow(list);
+  async defineHeaderRow(list) {
+    const promise = promisify(this.targetWorksheet.setHeaderRow);
+
+    await promise(list);
   }
 
   async getCells() {
