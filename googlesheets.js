@@ -2,10 +2,11 @@ const { promisify } = require('util');
 const GoogleSpreadsheet = require('google-spreadsheet');
 
 class GoogleSheets {
-  constructor({ credentials, sheetKey }) {
+  constructor({ credentials, sheetKey, maxCol }) {
     this.sheetsService = new GoogleSpreadsheet(sheetKey);
     this.credentials = credentials;
     this.targetWorksheet;
+    this.maxCol = maxCol;
   }
 
   setAuth() {
@@ -58,7 +59,7 @@ class GoogleSheets {
     const cells = await getCellsPromise({
       'min-row': 1,
       'max-row': 50,
-      'max-col': 5,
+      'max-col': this.maxCol,
       'return-empty': true
     });
 

@@ -15,5 +15,6 @@ module.exports = {
   JIRA_USER: JIRA_USER,
   JIRA_PASSWORD: JIRA_PASSWORD,
   TEAM_LABELS: TEAM_LABELS ? TEAM_LABELS.split(',') : undefined,
-  PROJECTS: PROJECTS ? PROJECTS.split(',') : undefined
+  PROJECTS: PROJECTS ? PROJECTS.split(',') : undefined,
+  maxCol: 9
 };
