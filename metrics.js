@@ -7,7 +7,11 @@ momentDurationFormatSetup(moment);
 function humanFriendlyTimeFormat(timeInput) {
   const duration = moment.duration(timeInput);
 
-  return duration.format('dd [dias, ] hh [horas e] mm [m]');
+  return {
+    readable: duration.format('dd [dias, ] hh [horas e] mm [m]'),
+    inHours: Number(duration.format('hh')),
+    inSeconds: Number(duration.format('ss').replace(/,/g, ''))
+  };
 }
 
 function timeDifference(posteriorDate, initialDate) {

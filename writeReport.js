@@ -1,41 +1,46 @@
 const Googlesheets = require('./Googlesheets');
-const { SHEET_KEY } = require('./config');
+const { SHEET_KEY, maxCol } = require('./config');
 const credentials = require('./credentials.json');
 
-function writeSprintSummary(metrics, changeCell) {
-  console.log('   Writing Sprint Summary...');
+function writeSprintSpecifics(metrics, changeCell) {
+  console.log('   Writing Sprint Specifics...');
 
-  const {
-    objetiveAccomplished,
-    alignmentWithOkr,
-    velocity,
-    cycleTime,
-    leadTime,
-    totalIssues,
-    totalIssuesResolved
-  } = metrics;
+  const { objetiveAccomplished, totalIssues, totalIssuesResolved } = metrics;
 
-  changeCell(2, 1, { value: 'objetivo cumprido' });
-  changeCell(2, 2, { value: objetiveAccomplished ? 'sim' : 'não' });
+  changeCell(7, 1, { value: 'Sprint' });
 
-  changeCell(3, 1, { value: '% da sprint finalizada' });
-  changeCell(3, 2, { value: totalIssuesResolved / totalIssues });
+  changeCell(8, 1, { value: 'objetivo cumprido' });
+  changeCell(8, 2, { value: objetiveAccomplished ? 'sim' : 'não' });
 
-  changeCell(4, 1, { value: 'alinhamento com OKR' });
-  changeCell(4, 2, { value: alignmentWithOkr });
-
-  changeCell(5, 1, { value: 'velocity do time' });
-  changeCell(5, 2, { value: velocity });
-
-  changeCell(6, 1, { value: 'cycle time médio' });
-  changeCell(6, 2, { value: cycleTime.mean });
-
-  changeCell(7, 1, { value: 'lead time médio' });
-  changeCell(7, 2, { value: leadTime.mean });
+  changeCell(9, 1, { value: '% da sprint finalizada' });
+  const finishedPercentage = (
+    (totalIssuesResolved / totalIssues) *
+    100
+  ).toFixed(2);
+  changeCell(9, 2, { value: `${finishedPercentage}%` });
 }
 
-function writeSprintDetails(metrics, changeCell) {
-  console.log('   Writing Sprint Details...');
+function writeSummary(metrics, changeCell) {
+  console.log('   Writing Summary...');
+
+  const { alignmentWithOkr, velocity, cycleTime, leadTime } = metrics;
+
+  changeCell(2, 1, { value: 'alinhamento com OKR' });
+  const alignmentPercentage = (alignmentWithOkr * 100).toFixed(2);
+  changeCell(2, 2, { value: `${alignmentPercentage}%` });
+
+  changeCell(3, 1, { value: 'velocity do time' });
+  changeCell(3, 2, { value: velocity });
+
+  changeCell(4, 1, { value: 'cycle time médio' });
+  changeCell(4, 2, { value: cycleTime.mean.readable });
+
+  changeCell(5, 1, { value: 'lead time médio' });
+  changeCell(5, 2, { value: leadTime.mean.readable });
+}
+
+function writeDetails(metrics, changeCell) {
+  console.log('   Writing Details...');
 
   const {
     cycleTime,
@@ -70,23 +75,26 @@ function writeSprintDetails(metrics, changeCell) {
       value: size
     });
     changeCell(lastRowManuallyUsed + (index + 1), 5, {
-      value: cycleTime.perSize[size].mean
+      value: cycleTime.perSize[size].mean.readable
+    });
+    changeCell(lastRowManuallyUsed + (index + 1), 6, {
+      value: cycleTime.perSize[size].mean.inSeconds
     });
   });
 
-  const lastRowUsed =
-    lastRowManuallyUsed + Object.keys(cycleTime.perSize).length;
-  changeCell(lastRowUsed + 1, 4, {
+  changeCell(lastRowManuallyUsed, 7, {
     value: 'lead time médio por tamanho estimado'
   });
 
-  lastRowManuallyUsed = lastRowUsed + 1;
   Object.keys(leadTime.perSize).forEach((size, index) => {
-    changeCell(lastRowManuallyUsed + (index + 1), 4, {
+    changeCell(lastRowManuallyUsed + (index + 1), 7, {
       value: size
     });
-    changeCell(lastRowManuallyUsed + (index + 1), 5, {
-      value: leadTime.perSize[size].mean
+    changeCell(lastRowManuallyUsed + (index + 1), 8, {
+      value: leadTime.perSize[size].mean.readable
+    });
+    changeCell(lastRowManuallyUsed + (index + 1), 9, {
+      value: leadTime.perSize[size].mean.inSeconds
     });
   });
 }
@@ -104,35 +112,33 @@ async function findOrCreateWorksheet(googlesheets, title) {
   }
 }
 
-module.exports = async function({ metrics, worksheetTitle }) {
+module.exports = async function({ metrics, worksheetTitle, onlyOpenSprint }) {
   try {
     const googlesheets = new Googlesheets({
       credentials,
-      sheetKey: SHEET_KEY
+      sheetKey: SHEET_KEY,
+      maxCol
     });
 
     await googlesheets.setAuth();
     await findOrCreateWorksheet(googlesheets, worksheetTitle);
 
-    await googlesheets.defineHeaderRow([
-      'Resumo da Sprint',
-      '',
-      '',
-      'Detalhamento da Sprint',
-      ''
-    ]);
+    await googlesheets.defineHeaderRow(['Resumo', '', '', 'Detalhamento', '']);
 
     const cells = await googlesheets.getCells();
 
     function changeCell(line, col, values) {
-      const lineMaxIndex = line * 4 + line - 1;
-      const colIndexAdjustment = 5 - col;
+      const lineMaxIndex = line * (maxCol - 1) + line - 1;
+      const colIndexAdjustment = maxCol - col;
 
       Object.assign(cells[lineMaxIndex - colIndexAdjustment], values);
     }
 
-    writeSprintSummary(metrics, changeCell);
-    writeSprintDetails(metrics, changeCell);
+    writeSummary(metrics, changeCell);
+    writeDetails(metrics, changeCell);
+    if (onlyOpenSprint) {
+      writeSprintSpecifics(metrics, changeCell);
+    }
 
     await googlesheets.bulkUpdateCells(cells);
   } catch (e) {
