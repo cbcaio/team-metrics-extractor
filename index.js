@@ -9,8 +9,12 @@ console.log('Initializing...');
 (async () => {
   try {
     const jiraService = new Jira(config);
+    const onlyOpenSprint = false;
     console.log(' Retrieving data from Jira and handling issues details...');
-    const data = await jiraService.allIssues();
+    const data = await jiraService.allIssues({
+      onlyOpenSprint,
+      fromWeeksAgo: 6
+    });
     const issues = data.issues;
     const transformedIssues = [];
     for (let issue of issues) {
@@ -25,7 +29,8 @@ console.log('Initializing...');
     console.log(' Writing reports to googlesheets...');
     await writeReport({
       metrics,
-      worksheetTitle: 'Team Metrics Report'
+      worksheetTitle: 'Team Metrics Report',
+      onlyOpenSprint
     });
 
     console.log('Finished');

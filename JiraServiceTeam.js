@@ -8,8 +8,9 @@ class JiraServiceTeam extends JiraServiceBase {
     this.projectsFilter = config.PROJECTS;
   }
 
-  async allIssues(config = { onlyOpenSprint: true }) {
-    const { onlyOpenSprint } = config;
+  async allIssues(config) {
+    const { onlyOpenSprint, fromWeeksAgo } = config;
+
     try {
       let allIssuesJqlQuery = `labels in (${this.labelsFilter.toString()}) AND project in (${this.projectsFilter.toString()})`;
 
@@ -17,7 +18,11 @@ class JiraServiceTeam extends JiraServiceBase {
         allIssuesJqlQuery += ' AND sprint in openSprints ()';
       }
 
-      allIssuesJqlQuery += ' ORDER BY Prioridade ASC';
+      if (!onlyOpenSprint) {
+        allIssuesJqlQuery += ` AND (updatedDate >= startOfDay("-${fromWeeksAgo}w") OR created >= startOfDay("-${fromWeeksAgo}w"))`;
+      }
+
+      allIssuesJqlQuery += ' ORDER BY created DESC';
 
       const response = await this.request(
         `/search?jql=${allIssuesJqlQuery}&maxResults=10000`
