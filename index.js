@@ -9,16 +9,18 @@ console.log('Initializing...');
 (async () => {
   try {
     const jiraService = new Jira(config);
-    const onlyOpenSprint = false;
     console.log(' Retrieving data from Jira and handling issues details...');
-    const data = await jiraService.allIssues({
-      onlyOpenSprint,
-      fromWeeksAgo: 6
+    const issues = await jiraService.getIssues({
+      scrum: {
+        fromLastXSprints: 2,
+      },
+      // kanban: {
+      //   fromWeeksAgo: 6
+      // }
     });
-    const issues = data.issues;
     const transformedIssues = [];
     for (let issue of issues) {
-      const issueDetails = await jiraService.issueDetails(issue.key);
+      const issueDetails = await jiraService.issueDetails(issue);
       const transformedIssue = issueTransformer(issueDetails);
       transformedIssues.push(transformedIssue);
     }
@@ -29,8 +31,8 @@ console.log('Initializing...');
     console.log(' Writing reports to googlesheets...');
     await writeReport({
       metrics,
-      worksheetTitle: 'Team Metrics Report',
-      onlyOpenSprint
+      worksheetTitle: 'last 2 sprints',
+      onlySprints: true
     });
 
     console.log('Finished');

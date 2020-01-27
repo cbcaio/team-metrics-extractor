@@ -112,7 +112,7 @@ async function findOrCreateWorksheet(googlesheets, title) {
   }
 }
 
-module.exports = async function({ metrics, worksheetTitle, onlyOpenSprint }) {
+module.exports = async function({ metrics, worksheetTitle, onlySprints }) {
   try {
     const googlesheets = new Googlesheets({
       credentials,
@@ -136,7 +136,7 @@ module.exports = async function({ metrics, worksheetTitle, onlyOpenSprint }) {
 
     writeSummary(metrics, changeCell);
     writeDetails(metrics, changeCell);
-    if (onlyOpenSprint) {
+    if (onlySprints) {
       writeSprintSpecifics(metrics, changeCell);
     }
 
