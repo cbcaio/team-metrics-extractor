@@ -1,5 +1,5 @@
 function map(issue) {
-  const baseProperties = {
+  return {
     code: issue.key,
     issueType: issue.fields.issuetype.name,
     issueSummary: issue.fields.summary,
@@ -10,27 +10,6 @@ function map(issue) {
     created: asDate(issue.fields.created),
     leadTimeStart: asDatetime(issue.fields.created)
   };
-
-  let sprintProperties = {};
-  if (issue.sprintDetails) {
-    const { sprintDetails } = issue;
-    sprintProperties = {
-      currentSprint: {
-        id: sprintDetails.sprint.id,
-        name: sprintDetails.sprint.name,
-        goal: sprintDetails.sprint.goal
-      },
-      pastSprints: sprintDetails.closedSprint.map(s => ({
-        id: s.id,
-        name: s.name,
-        goal: s.goal
-      }))
-    };
-  }
-
-  const mappedProperties = Object.assign({}, baseProperties, sprintProperties);
-
-  return mappedProperties;
 }
 
 function asDate(date) {
@@ -59,7 +38,6 @@ function asDatetime(date) {
 function isSubTask(issue) {
   return issue.fields.issuetype.name === 'Sub-task';
 }
-
 function extractPointsInTime(changelog) {
   const pointsInTime = {};
   const histories = changelog.histories;

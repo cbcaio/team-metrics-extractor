@@ -1,6 +1,5 @@
 const Googlesheets = require('./Googlesheets');
-const { SHEET_KEY, maxCol } = require('./config');
-const credentials = require('./credentials.json');
+const { SHEET_KEY, maxCol, credentials } = require('./config');
 
 function writeSprintSpecifics(metrics, changeCell) {
   console.log('   Writing Sprint Specifics...');

@@ -18,5 +18,6 @@ module.exports = {
   JIRA_BOARD_ID: JIRA_BOARD_ID,
   TEAM_LABELS: TEAM_LABELS ? TEAM_LABELS.split(',') : undefined,
   PROJECTS: PROJECTS ? PROJECTS.split(',') : undefined,
-  maxCol: 9
+  maxCol: 9,
+  credentials: require('../credentials.json')
 };
