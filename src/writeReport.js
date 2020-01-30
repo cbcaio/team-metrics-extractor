@@ -1,74 +1,78 @@
 const Googlesheets = require('./Googlesheets');
 const { SHEET_KEY, maxCol, credentials } = require('./config');
 
-function writeSprintSpecifics(metrics, changeCell) {
-  console.log('   Writing Sprint Specifics...');
+function writeSprintSummary(sprint, changeCell) {
+  const { metrics } = sprint;
+  const lastUsedLine = writeSummary(metrics, changeCell) + 2;
 
-  const { objetiveAccomplished, totalIssues, totalIssuesResolved } = metrics;
+  changeCell(lastUsedLine + 1, 1, { value: 'Específicos da Sprint' });
 
-  changeCell(7, 1, { value: 'Sprint' });
+  changeCell(lastUsedLine + 2, 1, { value: 'velocity' });
+  changeCell(lastUsedLine + 2, 2, { value: metrics.velocity });
 
-  changeCell(8, 1, { value: 'objetivo cumprido' });
-  changeCell(8, 2, { value: objetiveAccomplished ? 'sim' : 'não' });
+  changeCell(lastUsedLine + 3, 1, { value: 'issues carregados' });
+  changeCell(lastUsedLine + 3, 2, { value: metrics.carriedOnIssues });
 
-  changeCell(9, 1, { value: '% da sprint finalizada' });
-  const finishedPercentage = (
-    (totalIssuesResolved / totalIssues) *
-    100
-  ).toFixed(2);
-  changeCell(9, 2, { value: `${finishedPercentage}%` });
+  changeCell(lastUsedLine + 4, 1, { value: 'objetivo atingido' });
+  changeCell(lastUsedLine + 4, 2, {
+    value: metrics.objetiveAccomplished ? 'sim' : 'não'
+  });
+
+  writeDetails(sprint.metrics, changeCell);
 }
 
 function writeSummary(metrics, changeCell) {
   console.log('   Writing Summary...');
 
-  const { alignmentWithOkr, velocity, cycleTime, leadTime } = metrics;
+  const {
+    alignmentWithOkr,
+    cycleTime,
+    leadTime,
+    totalStories,
+    totalTasks,
+    totalSubTasks,
+    finishedPercentage,
+    throughput
+  } = metrics;
 
-  changeCell(2, 1, { value: 'alinhamento com OKR' });
+  changeCell(2, 1, { value: '% alinhamento com OKR' });
   const alignmentPercentage = (alignmentWithOkr * 100).toFixed(2);
   changeCell(2, 2, { value: `${alignmentPercentage}%` });
 
-  changeCell(3, 1, { value: 'velocity do time' });
-  changeCell(3, 2, { value: velocity });
+  changeCell(3, 1, { value: '% issues finalizados' });
+  changeCell(3, 2, { value: (finishedPercentage * 100).toFixed(2) });
 
-  changeCell(4, 1, { value: 'cycle time médio' });
-  changeCell(4, 2, { value: cycleTime.mean.readable });
+  changeCell(4, 1, { value: 'lead time médio' });
+  changeCell(4, 2, { value: leadTime.mean.readable });
 
-  changeCell(5, 1, { value: 'lead time médio' });
-  changeCell(5, 2, { value: leadTime.mean.readable });
+  changeCell(5, 1, { value: 'cycle time médio' });
+  changeCell(5, 2, { value: cycleTime.mean.readable });
+
+  changeCell(6, 1, { value: 'total stories' });
+  changeCell(6, 2, { value: totalStories });
+
+  changeCell(7, 1, { value: 'total tasks' });
+  changeCell(7, 2, { value: totalTasks });
+
+  changeCell(8, 1, { value: 'total totalSubTasks' });
+  changeCell(8, 2, { value: totalSubTasks });
+
+  changeCell(9, 1, { value: 'throughput' });
+  changeCell(9, 2, { value: throughput });
+
+  const lastUsedLine = 9;
+
+  return lastUsedLine;
 }
 
 function writeDetails(metrics, changeCell) {
   console.log('   Writing Details...');
 
-  const {
-    cycleTime,
-    leadTime,
-    totalIssues,
-    totalIssuesResolved,
-    totalStories,
-    totalTasks,
-    totalSubTasks
-  } = metrics;
+  const { cycleTime, leadTime } = metrics;
 
-  changeCell(2, 4, { value: 'total de issues' });
-  changeCell(2, 5, { value: totalIssues });
+  changeCell(2, 4, { value: 'cycle time médio por tamanho estimado' });
 
-  changeCell(3, 4, { value: 'total de issue finalizados' });
-  changeCell(3, 5, { value: totalIssuesResolved });
-
-  changeCell(4, 4, { value: 'total de Historias' });
-  changeCell(4, 5, { value: totalStories });
-
-  changeCell(5, 4, { value: 'total de Tasks' });
-  changeCell(5, 5, { value: totalTasks });
-
-  changeCell(6, 4, { value: 'total de SubTasks' });
-  changeCell(6, 5, { value: totalSubTasks });
-
-  changeCell(7, 4, { value: 'cycle time médio por tamanho estimado' });
-
-  let lastRowManuallyUsed = 7;
+  let lastRowManuallyUsed = 2;
   Object.keys(cycleTime.perSize).forEach((size, index) => {
     changeCell(lastRowManuallyUsed + (index + 1), 4, {
       value: size
@@ -98,20 +102,7 @@ function writeDetails(metrics, changeCell) {
   });
 }
 
-async function findOrCreateWorksheet(googlesheets, title) {
-  try {
-    await googlesheets.addWorksheet({
-      title: title
-    });
-  } catch (e) {
-    if (!e.includes('Error: HTTP error 400 (Bad Request)')) {
-      throw e;
-    }
-    await googlesheets.defineWorksheet(title);
-  }
-}
-
-module.exports = async function({ metrics, worksheetTitle, onlySprints }) {
+module.exports = async function({ metrics, worksheetTitle, boardType }) {
   try {
     const googlesheets = new Googlesheets({
       credentials,
@@ -120,26 +111,40 @@ module.exports = async function({ metrics, worksheetTitle, onlySprints }) {
     });
 
     await googlesheets.setAuth();
-    await findOrCreateWorksheet(googlesheets, worksheetTitle);
 
-    await googlesheets.defineHeaderRow(['Resumo', '', '', 'Detalhamento', '']);
+    switch (boardType) {
+      case 'kanban': {
+        break;
+      }
+      case 'scrum':
+      default: {
+        const sprints = metrics;
 
-    const cells = await googlesheets.getCells();
+        for (const sprint of sprints) {
+          await googlesheets.findOrCreateWorksheet(
+            `${sprint.id} - ${sprint.name}`
+          );
+          await googlesheets.defineHeaderRow([
+            'Resumo',
+            '',
+            '',
+            'Detalhamento',
+            ''
+          ]);
 
-    function changeCell(line, col, values) {
-      const lineMaxIndex = line * (maxCol - 1) + line - 1;
-      const colIndexAdjustment = maxCol - col;
+          await googlesheets.loadTargetWorksheetCells();
 
-      Object.assign(cells[lineMaxIndex - colIndexAdjustment], values);
+          writeSprintSummary(
+            sprint,
+            googlesheets.changeCell.bind(googlesheets)
+          );
+
+          await googlesheets.bulkUpdateCells();
+        }
+
+        break;
+      }
     }
-
-    writeSummary(metrics, changeCell);
-    writeDetails(metrics, changeCell);
-    if (onlySprints) {
-      writeSprintSpecifics(metrics, changeCell);
-    }
-
-    await googlesheets.bulkUpdateCells(cells);
   } catch (e) {
     console.log('Error while writing report');
     console.error(e);

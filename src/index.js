@@ -6,7 +6,7 @@ const metricsService = require('./metrics');
 const writeReport = require('./writeReport');
 
 console.log('Initializing...');
-const args = ['scrum', '0', '2'];
+const args = ['scrum', '1', '1'];
 // const args = ['kanban', '6w'];
 
 (async () => {
@@ -19,11 +19,11 @@ const args = ['scrum', '0', '2'];
     switch (boardType) {
       case 'scrum': {
         const jiraService = new JiraScrumApi(config);
-        const [onlyOpenSprint, fromLastXSprints] = args.slice(1);
+        const [includeActiveSprints, fromLastXSprints] = args.slice(1);
 
         const sprints = await jiraService.getSprints({
           fromLastXSprints: Number(fromLastXSprints),
-          onlyOpenSprint: onlyOpenSprint === '1'
+          includeActiveSprints: includeActiveSprints === '1'
         });
 
         const sprintIssues = await jiraService.getIssuesInSprints(
@@ -61,8 +61,8 @@ const args = ['scrum', '0', '2'];
     console.log(' Writing reports to googlesheets...');
     await writeReport({
       metrics,
-      worksheetTitle: 'last 2 sprints',
-      onlySprints: true
+      worksheetTitle: 'Kanban Board',
+      boardType
     });
 
     console.log('Finished');

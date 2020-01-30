@@ -7,6 +7,7 @@ class GoogleSheets {
     this.credentials = credentials;
     this.targetWorksheet;
     this.maxCol = maxCol;
+    this.cells;
   }
 
   setAuth() {
@@ -51,7 +52,7 @@ class GoogleSheets {
     await promise(list);
   }
 
-  async getCells() {
+  async loadTargetWorksheetCells() {
     const getCellsPromise = promisify(
       this.targetWorksheet.getCells.bind(this.targetWorksheet)
     );
@@ -63,15 +64,37 @@ class GoogleSheets {
       'return-empty': true
     });
 
-    return cells;
+    this.cells = cells;
+
+    return this.cells;
   }
 
-  async bulkUpdateCells(cells) {
+  changeCell(line, col, values) {
+    const lineMaxIndex = line * (this.maxCol - 1) + line - 1;
+    const colIndexAdjustment = this.maxCol - col;
+
+    Object.assign(this.cells[lineMaxIndex - colIndexAdjustment], values);
+  }
+
+  async bulkUpdateCells() {
     const bulkPromise = promisify(
       this.targetWorksheet.bulkUpdateCells.bind(this.targetWorksheet)
     );
 
-    await bulkPromise(cells);
+    await bulkPromise(this.cells);
+  }
+
+  async findOrCreateWorksheet(title) {
+    try {
+      await this.addWorksheet({
+        title: title
+      });
+    } catch (e) {
+      if (!e.includes('Error: HTTP error 400 (Bad Request)')) {
+        throw e;
+      }
+      await this.defineWorksheet(title);
+    }
   }
 }
 

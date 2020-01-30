@@ -61,14 +61,14 @@ class JiraScrumApi extends JiraServiceBase {
     return issues;
   }
   async getSprints(config) {
-    const { fromLastXSprints, onlyOpenSprint } = config;
+    const { fromLastXSprints, includeActiveSprints } = config;
     const sprintsArg = {
       states: ['closed'],
       startAt: 0,
       x: fromLastXSprints
     };
 
-    if (onlyOpenSprint) sprintsArg.states = ['open'];
+    if (includeActiveSprints) sprintsArg.states.push('active');
 
     const sprints = await this.getLastXSprints(sprintsArg);
 

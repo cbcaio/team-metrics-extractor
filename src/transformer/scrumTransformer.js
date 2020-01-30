@@ -17,7 +17,9 @@ module.exports = function scrumTransformer(sprints) {
       return {
         ...issueTransformer(i),
         currentSprint: sprintInfo(i.fields.sprint),
-        pastSprints: i.fields.closedSprints.map(sprintInfo)
+        pastSprints: i.fields.closedSprints
+          ? i.fields.closedSprints.map(sprintInfo)
+          : []
       };
     });
 

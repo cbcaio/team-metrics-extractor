@@ -1,4 +1,11 @@
-const { meanBy } = require('lodash');
+const { meanBy, groupBy } = require('lodash');
+const {
+  extractNonSubTasksIssues,
+  extractResolvedIssues,
+  timeDifference,
+  humanFriendlyTimeFormat,
+  calculateTotalIssuesByIssueType
+} = require('./helpers');
 
 function calculateCycleTime(issue) {
   const { cycleTimeStart, cycleTimeStop } = issue;
@@ -11,17 +18,17 @@ function calculateLeadTime(issue) {
 
   return timeDifference(leadTimeStop, leadTimeStart);
 }
-function calculateMeanCycleTime(issuesStats) {
-  const meanCycleTimeDuration = _.meanBy(
-    Object.values(issuesStats),
+function calculateMeanCycleTime(issues) {
+  const meanCycleTimeDuration = meanBy(
+    Object.values(issues).filter(i => i.cycleTime),
     i => i.cycleTime.timeDifference
   );
 
   return humanFriendlyTimeFormat(meanCycleTimeDuration);
 }
-function calculateMeanLeadTime(issuesStats) {
-  const meanLeadTimeDuration = _.meanBy(
-    Object.values(issuesStats),
+function calculateMeanLeadTime(issues) {
+  const meanLeadTimeDuration = meanBy(
+    Object.values(issues).filter(i => i.leadTime),
     i => i.leadTime.timeDifference
   );
 
@@ -40,37 +47,26 @@ function calculateOkrAlignment(issues) {
 
   return (totalAlignedIssues / totalIssuesCounted).toFixed(2);
 }
-function calculateMetricsPerSize(issuesDetails, issuesStats) {
-  const statsWithSizeAppended = [];
-
-  Object.keys(issuesStats).forEach(i => {
-    const accountableIssue = issuesDetails.find(d => d.code === i);
-    if (!accountableIssue) return;
-
-    statsWithSizeAppended.push({
-      estimatedSize: accountableIssue.estimatedSize,
-      ...issuesStats[i]
-    });
-  });
-
-  const issuesBySize = groupBy(statsWithSizeAppended, i => i.estimatedSize);
+function calculateMetricsPerSize(issues) {
+  const accountableIssues = issues.filter(
+    i => i.estimatedSize && i.cycleTime && i.leadTime
+  );
+  const issuesBySize = groupBy(accountableIssues, i => i.estimatedSize);
 
   const cycleTime = {};
   const leadTime = {};
 
   Object.keys(issuesBySize).forEach(size => {
-    const issuesListPerSizeWithStats = issuesBySize[size];
-
     Object.assign(cycleTime, {
       [size]: {
-        mean: calculateMeanCycleTime(issuesListPerSizeWithStats),
-        totalCount: issuesListPerSizeWithStats.length
+        mean: calculateMeanCycleTime(issuesBySize[size]),
+        totalCount: issuesBySize[size].length
       }
     });
     Object.assign(leadTime, {
       [size]: {
-        mean: calculateMeanLeadTime(issuesListPerSizeWithStats),
-        totalCount: issuesListPerSizeWithStats.length
+        mean: calculateMeanLeadTime(issuesBySize[size]),
+        totalCount: issuesBySize[size].length
       }
     });
   });
@@ -80,24 +76,43 @@ function calculateMetricsPerSize(issuesDetails, issuesStats) {
     leadTime
   };
 }
-module.exports = function calculateGenericMetrics() {
-  const metricsPerSize = calculateMetricsPerSize(estimatedIssues, issuesStats);
 
-  const cycleTime = calculateCycleTime(issue);
-  const leadTime = calculateLeadTime(issue);
-  
-  stats.cycleTime = {
-    mean: calculateMeanCycleTime(issuesStats),
+function calculateIssuesMetrics(issues) {
+  const issuesWithMetrics = issues.map(i => ({
+    cycleTime: calculateCycleTime(i),
+    leadTime: calculateLeadTime(i),
+    ...i
+  }));
+
+  return issuesWithMetrics;
+}
+
+module.exports = function calculateGenericMetrics(issues) {
+  let metrics = {
+    totalStories: calculateTotalIssuesByIssueType(issues, 'Story'),
+    totalTasks: calculateTotalIssuesByIssueType(issues, 'Task'),
+    totalSubTasks: calculateTotalIssuesByIssueType(issues, 'Sub-task')
+  };
+
+  const issuesWithMetrics = calculateIssuesMetrics(issues);
+  const accountableIssues = extractResolvedIssues(
+    extractNonSubTasksIssues(issuesWithMetrics)
+  );
+  const metricsPerSize = calculateMetricsPerSize(accountableIssues);
+
+  metrics.cycleTime = {
+    mean: calculateMeanCycleTime(accountableIssues),
     perSize: metricsPerSize.cycleTime
   };
 
-  stats.leadTime = {
-    mean: calculateMeanLeadTime(issuesStats),
+  metrics.leadTime = {
+    mean: calculateMeanLeadTime(accountableIssues),
     perSize: metricsPerSize.leadTime
   };
-  stats.alignmentWithOkr = calculateOkrAlignment(issues);
-  stats.totalStories = calculateTotalIssuesByIssueType(issues, 'Story');
-  stats.totalTasks = calculateTotalIssuesByIssueType(issues, 'Task');
-  stats.totalSubTasks = calculateTotalIssuesByIssueType(issues, 'Sub-task');
-  stats.totalIssues = extractNonSubTasksIssues(issues).length;
+
+  metrics.alignmentWithOkr = calculateOkrAlignment(accountableIssues);
+
+  metrics.throughput = accountableIssues.length;
+
+  return metrics;
 };

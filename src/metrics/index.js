@@ -2,7 +2,7 @@ const genericMetrics = require('./genericMetrics');
 const calculateScrumMetrics = require('./scrumMetrics');
 const scrumTransformer = require('../transformer/scrumTransformer');
 
-module.exports = async function processAllIssues(input, boardType) {
+module.exports = function processAllIssues(input, boardType) {
   let metrics;
 
   switch (boardType) {
@@ -14,7 +14,10 @@ module.exports = async function processAllIssues(input, boardType) {
       const sprints = input;
       const transformedSprints = scrumTransformer(sprints);
 
-      metrics = calculateScrumMetrics(transformedSprints);
+      metrics = transformedSprints.map(sprint => ({
+        metrics: calculateScrumMetrics(sprint),
+        ...sprint
+      }));
     }
   }
 
