@@ -38,7 +38,6 @@ function asDatetime(date) {
 function isSubTask(issue) {
   return issue.fields.issuetype.name === 'Sub-task';
 }
-
 function extractPointsInTime(changelog) {
   const pointsInTime = {};
   const histories = changelog.histories;
@@ -89,10 +88,7 @@ function extractEstimatedSize(issue) {
 
 function handleExceptions(transformedIssue) {
   const issue = { ...transformedIssue };
-  const {
-    leadTimeStop,
-    cycleTimeStart
-  } = issue;
+  const { leadTimeStop, cycleTimeStart } = issue;
 
   if (leadTimeStop && !cycleTimeStart) {
     issue.cycleTimeStart = issue.leadTimeStart;

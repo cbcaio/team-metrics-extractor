@@ -5,7 +5,7 @@
       "type": "node",
       "request": "launch",
       "name": "Run in Debug Mode",
-      "program": "${workspaceFolder}/index.js"
+      "program": "${workspaceFolder}/src/index.js"
     }
   ]
 }

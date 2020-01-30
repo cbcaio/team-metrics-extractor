@@ -5,7 +5,8 @@ const {
   JIRA_USER,
   JIRA_PASSWORD,
   TEAM_LABELS,
-  PROJECTS
+  PROJECTS,
+  JIRA_BOARD_ID
 } = process.env;
 
 module.exports = {
@@ -14,7 +15,9 @@ module.exports = {
   QUERY: QUERY,
   JIRA_USER: JIRA_USER,
   JIRA_PASSWORD: JIRA_PASSWORD,
+  JIRA_BOARD_ID: JIRA_BOARD_ID,
   TEAM_LABELS: TEAM_LABELS ? TEAM_LABELS.split(',') : undefined,
   PROJECTS: PROJECTS ? PROJECTS.split(',') : undefined,
-  maxCol: 9
+  maxCol: 9,
+  credentials: require('../credentials.json')
 };
