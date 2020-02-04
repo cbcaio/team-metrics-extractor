@@ -37,11 +37,10 @@ function writeSummary(metrics, changeCell) {
   } = metrics;
 
   changeCell(2, 1, { value: '% alinhamento com OKR' });
-  const alignmentPercentage = (alignmentWithOkr * 100).toFixed(2);
-  changeCell(2, 2, { value: `${alignmentPercentage}%` });
+  changeCell(2, 2, { value: `${(alignmentWithOkr * 100).toFixed(2)}%` });
 
   changeCell(3, 1, { value: '% issues finalizados' });
-  changeCell(3, 2, { value: (finishedPercentage * 100).toFixed(2) });
+  changeCell(3, 2, { value: `${(finishedPercentage * 100).toFixed(2)}%` });
 
   changeCell(4, 1, { value: 'lead time médio' });
   changeCell(4, 2, { value: humanFriendlyTimeFormat(leadTime.mean).readable });
@@ -118,7 +117,7 @@ function writeOverallMetrics(metrics, changeCell) {
   changeCell(3, 1, { value: 'Lead Time Médio do Time' });
   changeCell(3, 2, { value: meanLeadTime.readable });
   changeCell(4, 1, { value: '% de issues completos médio por sprint' });
-  changeCell(4, 2, { value: meanFinishedPercentage });
+  changeCell(4, 2, { value: `${(meanFinishedPercentage * 100).toFixed(2)}%` });
   changeCell(5, 1, { value: 'média de issues carregados por sprint' });
   changeCell(5, 2, { value: meanCarriedOnIssues });
   changeCell(6, 1, { value: 'throughput' });
