@@ -1,12 +1,13 @@
 require('dotenv').config();
 const config = require('./config');
+const sprintBlacklistFilter = require('./filters/sprintBlacklist');
 const JiraScrumApi = require('./jira/JiraScrumApi');
 const JiraKanbanApi = require('./jira/JiraKanbanApi');
 const metricsService = require('./metrics');
 const writeReport = require('./writeReport');
 
 console.log('Initializing...');
-const args = ['scrum', '1', '1'];
+const args = ['scrum', '0', '5'];
 // const args = ['kanban', '6w'];
 
 (async () => {
@@ -18,7 +19,10 @@ const args = ['scrum', '1', '1'];
     const boardType = args[0];
     switch (boardType) {
       case 'scrum': {
-        const jiraService = new JiraScrumApi(config);
+        const jiraService = new JiraScrumApi({
+          ...config,
+          sprintBlacklistFilter
+        });
         const [includeActiveSprints, fromLastXSprints] = args.slice(1);
 
         const sprints = await jiraService.getSprints({

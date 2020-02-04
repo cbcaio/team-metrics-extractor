@@ -6,6 +6,7 @@ class JiraScrumApi extends JiraServiceBase {
     super(config);
 
     this.boardId = config.JIRA_BOARD_ID;
+    this.sprintBlacklistFilter = config.sprintBlacklistFilter;
   }
 
   async getLastXSprints({ x, startAt = 0, states = ['closed'] }) {
@@ -33,7 +34,9 @@ class JiraScrumApi extends JiraServiceBase {
       sprintsHistory.length
     );
 
-    return sprints;
+    const filteredSprintsList = this.sprintBlacklistFilter(sprints);
+
+    return filteredSprintsList;
   }
 
   async getIssuesInSprints(sprintIds) {

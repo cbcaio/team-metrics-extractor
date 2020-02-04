@@ -1,4 +1,5 @@
 const issueTransformer = require('./issueTransformer');
+const sprintBlacklistFilter = require('../filters/sprintBlacklist');
 
 function sprintInfo(sprint) {
   return {
@@ -16,9 +17,9 @@ module.exports = function scrumTransformer(sprints) {
     const issues = sprint.issues.map(i => {
       return {
         ...issueTransformer(i),
-        currentSprint: sprintInfo(i.fields.sprint),
+        currentSprint: i.fields.sprint ? sprintInfo(i.fields.sprint) : null,
         pastSprints: i.fields.closedSprints
-          ? i.fields.closedSprints.map(sprintInfo)
+          ? sprintBlacklistFilter(i.fields.closedSprints.map(sprintInfo))
           : []
       };
     });
