@@ -1,8 +1,10 @@
 const calculateGenericMetrics = require('./genericMetrics');
 const {
   extractResolvedIssues,
-  extractNonSubTasksIssues
+  extractNonSubTasksIssues,
+  humanFriendlyTimeFormat
 } = require('./helpers');
+const { meanBy } = require('lodash');
 
 function calculateVelocity(issues) {
   const nonSubTasksIssues = extractNonSubTasksIssues(issues);
@@ -30,7 +32,31 @@ function calculateCarriedOnIssues(issues) {
   return carriedOnIssues;
 }
 
-module.exports = function calculateScrumMetrics(sprint) {
+function calculateOverallMetrics(sprintMetrics) {
+  const meanVelocity = meanBy(sprintMetrics, s => s.metrics.velocity);
+  const meanThroughput = meanBy(sprintMetrics, s => s.metrics.throughput);
+  const meanFinishedPercentage = meanBy(
+    sprintMetrics,
+    s => s.metrics.finishedPercentage
+  );
+  const meanCarriedOnIssues = meanBy(
+    sprintMetrics,
+    s => s.metrics.carriedOnIssues
+  );
+  const meanCycleTime = meanBy(sprintMetrics, s => s.metrics.cycleTime.mean);
+  const meanLeadTime = meanBy(sprintMetrics, s => s.metrics.leadTime.mean);
+
+  return {
+    meanVelocity,
+    meanThroughput,
+    meanFinishedPercentage,
+    meanCarriedOnIssues,
+    meanCycleTime: humanFriendlyTimeFormat(meanCycleTime),
+    meanLeadTime: humanFriendlyTimeFormat(meanLeadTime)
+  };
+}
+
+function calculateScrumMetrics(sprint) {
   const { issues } = sprint;
 
   const totalIssues = extractNonSubTasksIssues(issues);
@@ -45,4 +71,9 @@ module.exports = function calculateScrumMetrics(sprint) {
   };
 
   return sprintMetrics;
+}
+
+module.exports = {
+  calculateScrumMetrics,
+  calculateOverallMetrics
 };

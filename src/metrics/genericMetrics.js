@@ -3,38 +3,27 @@ const {
   extractNonSubTasksIssues,
   extractResolvedIssues,
   timeDifference,
-  humanFriendlyTimeFormat,
   calculateTotalIssuesByIssueType
 } = require('./helpers');
 
-function calculateCycleTime(issue) {
-  const { cycleTimeStart, cycleTimeStop } = issue;
-
-  return timeDifference(cycleTimeStop, cycleTimeStart);
-}
-
-function calculateLeadTime(issue) {
-  const { leadTimeStart, leadTimeStop } = issue;
-
-  return timeDifference(leadTimeStop, leadTimeStart);
-}
 function calculateMeanCycleTime(issues) {
   const meanCycleTimeDuration = meanBy(
     Object.values(issues).filter(i => i.cycleTime),
-    i => i.cycleTime.timeDifference
+    i => i.cycleTime
   );
 
-  return humanFriendlyTimeFormat(meanCycleTimeDuration);
+  return meanCycleTimeDuration;
 }
 function calculateMeanLeadTime(issues) {
   const meanLeadTimeDuration = meanBy(
     Object.values(issues).filter(i => i.leadTime),
-    i => i.leadTime.timeDifference
+    i => i.leadTime
   );
 
-  return humanFriendlyTimeFormat(meanLeadTimeDuration);
+  return meanLeadTimeDuration;
 }
-function calculateOkrAlignment(issues) {
+function 
+calculateOkrAlignment(issues) {
   let totalAlignedIssues = 0;
   let totalNotAlignedIssues = 0;
 
@@ -79,8 +68,8 @@ function calculateMetricsPerSize(issues) {
 
 function calculateIssuesMetrics(issues) {
   const issuesWithMetrics = issues.map(i => ({
-    cycleTime: calculateCycleTime(i),
-    leadTime: calculateLeadTime(i),
+    cycleTime: timeDifference(i.cycleTimeStop, i.cycleTimeStart),
+    leadTime: timeDifference(i.leadTimeStop, i.leadTimeStart),
     ...i
   }));
 

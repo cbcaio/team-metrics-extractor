@@ -22,10 +22,7 @@ function timeDifference(posteriorDate, initialDate) {
 
   const timeDifference = posteriorDateMoment.diff(initialDateMoment);
 
-  return {
-    timeDifference,
-    inFriendlyFormat: humanFriendlyTimeFormat(timeDifference)
-  };
+  return timeDifference;
 }
 
 function calculateTotalIssuesByIssueType(issues, type) {

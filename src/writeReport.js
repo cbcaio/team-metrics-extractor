@@ -1,4 +1,5 @@
 const Googlesheets = require('./Googlesheets');
+const { humanFriendlyTimeFormat } = require('./metrics/helpers');
 const { SHEET_KEY, maxCol, credentials } = require('./config');
 
 function writeSprintSummary(sprint, changeCell) {
@@ -43,10 +44,10 @@ function writeSummary(metrics, changeCell) {
   changeCell(3, 2, { value: (finishedPercentage * 100).toFixed(2) });
 
   changeCell(4, 1, { value: 'lead time médio' });
-  changeCell(4, 2, { value: leadTime.mean.readable });
+  changeCell(4, 2, { value: humanFriendlyTimeFormat(leadTime.mean).readable });
 
   changeCell(5, 1, { value: 'cycle time médio' });
-  changeCell(5, 2, { value: cycleTime.mean.readable });
+  changeCell(5, 2, { value: humanFriendlyTimeFormat(cycleTime.mean).readable });
 
   changeCell(6, 1, { value: 'total stories' });
   changeCell(6, 2, { value: totalStories });
@@ -64,7 +65,6 @@ function writeSummary(metrics, changeCell) {
 
   return lastUsedLine;
 }
-
 function writeDetails(metrics, changeCell) {
   console.log('   Writing Details...');
 
@@ -78,10 +78,10 @@ function writeDetails(metrics, changeCell) {
       value: size
     });
     changeCell(lastRowManuallyUsed + (index + 1), 5, {
-      value: cycleTime.perSize[size].mean.readable
+      value: humanFriendlyTimeFormat(cycleTime.perSize[size].mean).readable
     });
     changeCell(lastRowManuallyUsed + (index + 1), 6, {
-      value: cycleTime.perSize[size].mean.inSeconds
+      value: humanFriendlyTimeFormat(cycleTime.perSize[size].mean).inSeconds
     });
   });
 
@@ -94,12 +94,39 @@ function writeDetails(metrics, changeCell) {
       value: size
     });
     changeCell(lastRowManuallyUsed + (index + 1), 8, {
-      value: leadTime.perSize[size].mean.readable
+      value: humanFriendlyTimeFormat(leadTime.perSize[size].mean).readable
     });
     changeCell(lastRowManuallyUsed + (index + 1), 9, {
-      value: leadTime.perSize[size].mean.inSeconds
+      value: humanFriendlyTimeFormat(leadTime.perSize[size].mean).inSeconds
     });
   });
+}
+
+function writeOverallMetrics(metrics, changeCell) {
+  console.log('   Writing Overall...');
+  const {
+    meanVelocity,
+    meanThroughput,
+    meanFinishedPercentage,
+    meanCarriedOnIssues,
+    meanCycleTime,
+    meanLeadTime
+  } = metrics;
+
+  changeCell(2, 1, { value: 'Cycle Time Médio do Time' });
+  changeCell(2, 2, { value: meanCycleTime.readable });
+  changeCell(3, 1, { value: 'Lead Time Médio do Time' });
+  changeCell(3, 2, { value: meanLeadTime.readable });
+  changeCell(4, 1, { value: '% de issues completos médio por sprint' });
+  changeCell(4, 2, { value: meanFinishedPercentage });
+  changeCell(5, 1, { value: 'média de issues carregados por sprint' });
+  changeCell(5, 2, { value: meanCarriedOnIssues });
+  changeCell(6, 1, { value: 'throughput' });
+  changeCell(6, 2, { value: meanThroughput });
+  if (meanVelocity) {
+    changeCell(7, 1, { value: 'velocity' });
+    changeCell(7, 2, { value: meanVelocity });
+  }
 }
 
 module.exports = async function({ metrics, worksheetTitle, boardType }) {
@@ -118,7 +145,7 @@ module.exports = async function({ metrics, worksheetTitle, boardType }) {
       }
       case 'scrum':
       default: {
-        const sprints = metrics;
+        const { sprints } = metrics;
 
         for (const sprint of sprints) {
           await googlesheets.findOrCreateWorksheet(
@@ -141,6 +168,18 @@ module.exports = async function({ metrics, worksheetTitle, boardType }) {
 
           await googlesheets.bulkUpdateCells();
         }
+
+        await googlesheets.findOrCreateWorksheet('Resultado');
+        await googlesheets.defineHeaderRow(['Situação Atual']);
+
+        await googlesheets.loadTargetWorksheetCells();
+
+        writeOverallMetrics(
+          metrics,
+          googlesheets.changeCell.bind(googlesheets)
+        );
+
+        await googlesheets.bulkUpdateCells();
 
         break;
       }
