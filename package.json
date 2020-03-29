@@ -5,7 +5,7 @@
   "license": "MIT",
   "description": "Tool created to help extract team metrics from Jira",
   "scripts": {
-    "start": "node index"
+    "start": "node src/index"
   },
   "dependencies": {
     "axios": "^0.19.2",
