@@ -7,7 +7,7 @@ const metricsService = require('./metrics');
 const writeReport = require('./writeReport');
 
 console.log('Initializing...');
-const args = ['scrum', '0', '5'];
+const args = [config.JIRA_BOARD_TYPE, config.JIRA_ENABLE_ACTIVE_SPRINT, config.JIRA_SPRINTS];
 // const args = ['kanban', '6w'];
 
 (async () => {
