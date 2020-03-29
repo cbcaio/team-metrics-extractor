@@ -1,3 +1,5 @@
+const { JIRA_STATUSES } = require('../config');
+
 const moment = require('moment');
 const momentDurationFormatSetup = require('moment-duration-format');
 momentDurationFormatSetup(moment);
@@ -10,6 +12,10 @@ function humanFriendlyTimeFormat(timeInput) {
     inHours: Number(duration.format('hh')),
     inSeconds: Number(duration.format('ss').replace(/,/g, ''))
   };
+}
+
+function isDateBetween(date, start, end) {
+  return moment(date).isBetween(start, end);
 }
 
 function timeDifference(posteriorDate, initialDate) {
@@ -39,7 +45,7 @@ function extractNonSubTasksIssues(issues) {
 }
 
 function extractResolvedIssues(issues) {
-  return issues.filter(issue => issue.status === 'Resolved');
+  return issues.filter(issue => issue.status === JIRA_STATUSES.Resolved);
 }
 function calculateTotalIssuesByStatus(issues, status) {
   const accountableIssues = extractNonSubTasksIssues(issues);
@@ -58,5 +64,6 @@ module.exports = {
   extractNonSubTasksIssues,
   calculateTotalIssuesByIssueType,
   timeDifference,
-  humanFriendlyTimeFormat
+  humanFriendlyTimeFormat,
+  isDateBetween
 };

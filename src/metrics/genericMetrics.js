@@ -22,8 +22,8 @@ function calculateMeanLeadTime(issues) {
 
   return meanLeadTimeDuration;
 }
-function 
-calculateOkrAlignment(issues) {
+function
+  calculateOkrAlignment(issues) {
   let totalAlignedIssues = 0;
   let totalNotAlignedIssues = 0;
 

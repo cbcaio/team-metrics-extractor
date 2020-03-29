@@ -15,6 +15,13 @@ function sprintInfo(sprint) {
 module.exports = function scrumTransformer(sprints) {
   let transformedSprint = sprints.map(sprint => {
     const issues = sprint.issues.map(i => {
+      const sprintData = {
+        currentSprint: i.fields.sprint ? sprintInfo(i.fields.sprint) : null,
+        pastSprints: i.fields.closedSprints
+      };
+
+      i.sprintData = sprintData;
+
       return {
         ...issueTransformer(i),
         currentSprint: i.fields.sprint ? sprintInfo(i.fields.sprint) : null,
