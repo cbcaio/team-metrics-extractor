@@ -40,12 +40,24 @@ Crie um arquivo `.env` na raiz do projeto com os dados apropriados seguindo o mo
   JIRA_URL=https://jirasoftware.catho.com.br/rest/api/2
   JIRA_USER=jira.username
   JIRA_PASSWORD=123456
+  JIRA_BOARD_ID=x
+  JIRA_STATUSES={"Open": "To Do", "InProgress": "In Progress", "Resolved": "Done", "Canceled": "Cancelled"}
+  JIRA_ESTIMATE_FIELD=
+  JIRA_BOARD_TYPE=scrum ou kanban
+  JIRA_ENABLE_ACTIVE_SPRINT=1 ou 0
+  JIRA_SPRINTS=x
   SHEET_KEY=axasdqwewq1231aqeq21313
   TEAM_LABELS=""label","label2""
   PROJECTS=""Projeto 1","Projeto 2""
 ```
 
 - Explicação:
+  `JIRA_BOARD_ID`: board que será usado como referência para as métricas
+  `JIRA_STATUSES`: dependendo da configuração do seu jira, será necessário mudar o "nome" dos status utilizados
+  `JIRA_ESTIMATE_FIELD`: campo usado para as estimativas (`customfield_***`)
+  `JIRA_BOARD_TYPE`: indica se seu board é scrum ou kanban
+  `JIRA_ENABLE_ACTIVE_SPRINT`: indica se a sprint atual (apenas para board type `scrum`) deverá ser levada em consideração nas métricas
+  `JIRA_SPRINTS`: quantidade de sprints que deve ser considerada para gerar as métricas
   `SHEET_KEY`: é aquela chave que fica na url docs.google.com/spreadsheets/d/[ALGUMA COISA AQUI]
   `TEAM_LABELS`: labels do jira, usadas para filtrar issues que serão contabilizadas
   `PROJECTS`: nomes dos projetos do jira, usados para filtrar issues que serão contabilizadas
