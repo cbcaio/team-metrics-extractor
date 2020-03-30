@@ -21,7 +21,7 @@ module.exports = function processAllIssues(input, boardType) {
         metrics: calculateScrumMetrics(sprint),
         ...sprint
       }));
-      
+
       metrics = {
         ...calculateOverallMetrics(sprintsWithMetrics),
         sprints: sprintsWithMetrics

@@ -15,8 +15,15 @@ function sprintInfo(sprint) {
 module.exports = function scrumTransformer(sprints) {
   let transformedSprint = sprints.map(sprint => {
     const issues = sprint.issues.map(i => {
+      const sprintData = {
+        currentSprint: i.fields.sprint ? sprintInfo(i.fields.sprint) : null,
+        pastSprints: i.fields.closedSprints
+      };
+
+      const issue = Object.assign({}, i, { sprintData });
+
       return {
-        ...issueTransformer(i),
+        ...issueTransformer(issue),
         currentSprint: i.fields.sprint ? sprintInfo(i.fields.sprint) : null,
         pastSprints: i.fields.closedSprints
           ? sprintBlacklistFilter(i.fields.closedSprints.map(sprintInfo))

@@ -1,3 +1,6 @@
+const { isDateBetween } = require('../metrics/helpers');
+const { JIRA_STATUSES, JIRA_ESTIMATE_FIELD } = require('../config');
+
 function map(issue) {
   return {
     code: issue.key,
@@ -38,27 +41,32 @@ function asDatetime(date) {
 function isSubTask(issue) {
   return issue.fields.issuetype.name === 'Sub-task';
 }
-function extractPointsInTime(changelog) {
+function extractPointsInTime(issue) {
+  const { changelog } = issue;
+
   const pointsInTime = {};
   const histories = changelog.histories;
+
   histories.forEach(h => {
     h.items.forEach(history => {
       const { fromString, toString, field } = history;
+      const sprint = issue.sprintData.currentSprint || issue.sprintData.pastSprints[0];
 
       if (field !== 'status') {
         return;
       }
 
-      if (fromString === 'Open' && toString === 'In Progress') {
+      if (fromString === JIRA_STATUSES.Open && toString === JIRA_STATUSES.InProgress &&
+        isDateBetween(h.created, sprint.startDate, sprint.endDate)) {
         pointsInTime.cycleTimeStart = asDatetime(h.created);
       }
 
-      if (toString === 'Resolved') {
+      if (toString === JIRA_STATUSES.Resolved) {
         pointsInTime.leadTimeStop = asDatetime(h.created);
         pointsInTime.cycleTimeStop = asDatetime(h.created);
       }
 
-      if (toString === 'Cancelled') {
+      if (toString === JIRA_STATUSES.Cancelled) {
         pointsInTime.cancelled = true;
       }
     });
@@ -81,7 +89,7 @@ function isIssueAlignedWithOkr(issue) {
 }
 
 function extractEstimatedSize(issue) {
-  let estimatedSize = issue.fields['customfield_10106'];
+  let estimatedSize = issue.fields[JIRA_ESTIMATE_FIELD];
 
   return Number(estimatedSize);
 }
@@ -100,7 +108,7 @@ function handleExceptions(transformedIssue) {
 module.exports = function issueTransformer(issue) {
   try {
     const mappedFields = map(issue);
-    const pointsInTime = extractPointsInTime(issue.changelog);
+    const pointsInTime = extractPointsInTime(issue);
     let isAlignedWithOkr;
     let estimatedSize;
 
