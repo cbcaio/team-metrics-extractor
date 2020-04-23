@@ -20,8 +20,8 @@ class JiraScrumApi extends JiraServiceBase {
 
     this.boardId = config.JIRA_BOARD_ID;
     this.sprintBlacklist = config.SPRINT_BLACKLIST;
-    this.fromLastXSprints =   JIRA_SPRINTS;
-    this.includeActiveSprints = JIRA_ENABLE_ACTIVE_SPRINT === '1';
+    this.fromLastXSprints = config.JIRA_SPRINTS;
+    this.includeActiveSprints = config.JIRA_ENABLE_ACTIVE_SPRINT === '1';
   }
 
   sprintBlacklistFilter(sprints) {
