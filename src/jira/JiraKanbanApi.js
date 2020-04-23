@@ -1,5 +1,6 @@
 const _ = require('lodash');
 const JiraServiceBase = require('./JiraServiceBase');
+const issueTransformer = require('../transformer/issueTransformer');
 
 class JiraKanbanApi extends JiraServiceBase {
   constructor(config) {
@@ -7,18 +8,18 @@ class JiraKanbanApi extends JiraServiceBase {
 
     this.labelsFilter = config.TEAM_LABELS;
     this.projectsFilter = config.PROJECTS;
+    this.timebox = config.JIRA_KANBAN_TIMEBOX;
   }
 
-  async getIssues(config) {
+  async getIssues() {
     try {
-      const { fromXAgo } = config;
 
       let allIssuesJqlQuery = `labels in (${this.labelsFilter.toString()}) AND project in (${this.projectsFilter.toString()})`;
-      allIssuesJqlQuery += ` AND (updatedDate >= startOfDay("-${fromXAgo}") OR created >= startOfDay("-${fromWeeksAgo}w"))`;
+      allIssuesJqlQuery += ` AND (updatedDate >= startOfDay("-${this.timebox}") OR created >= startOfDay("-${this.timebox}"))`;
       allIssuesJqlQuery += ' ORDER BY created DESC';
 
       const response = await this.request({
-        apiRelativePath: `/search?jql=${allIssuesJqlQuery}&maxResults=10000`,
+        apiRelativePath: `/search?jql=${allIssuesJqlQuery}&maxResults=10000&expand=changelog`,
         version: 2
       });
 
@@ -27,6 +28,12 @@ class JiraKanbanApi extends JiraServiceBase {
       console.error(e);
       process.exit(1);
     }
+  }
+
+  async getTransformedIssues() {
+    const issues = await this.getIssues();
+
+    return issues.map(issueTransformer);
   }
 
   async issueDetails(issue) {

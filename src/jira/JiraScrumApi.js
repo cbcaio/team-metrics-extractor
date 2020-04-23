@@ -1,13 +1,37 @@
 const _ = require('lodash');
 const JiraServiceBase = require('./JiraServiceBase');
+const issueTransformer = require('../transformer/issueTransformer');
+
+
+function sprintInfo(sprint) {
+  return {
+    id: sprint.id,
+    name: sprint.name,
+    goal: sprint.goal || null,
+    startDate: sprint.startDate,
+    endDate: sprint.endDate,
+    completeDate: sprint.completeDate || null
+  };
+}
 
 class JiraScrumApi extends JiraServiceBase {
   constructor(config) {
     super(config);
 
     this.boardId = config.JIRA_BOARD_ID;
-    this.sprintBlacklistFilter = config.sprintBlacklistFilter;
+    this.sprintBlacklist = config.SPRINT_BLACKLIST;
+    this.fromLastXSprints =   JIRA_SPRINTS;
+    this.includeActiveSprints = JIRA_ENABLE_ACTIVE_SPRINT === '1';
   }
+
+  sprintBlacklistFilter(sprints) {
+    const filteredList = sprints.filter(s =>
+      this.sprintBlacklist ? !this.sprintBlacklist.includes(s.name) : true
+    );
+  
+    return filteredList;
+  };
+  
 
   async getLastXSprints({ x, startAt = 0, states = ['closed'] }) {
     const statesQueryString = states.join(',');
@@ -63,15 +87,14 @@ class JiraScrumApi extends JiraServiceBase {
 
     return issues;
   }
-  async getSprints(config) {
-    const { fromLastXSprints, includeActiveSprints } = config;
+  async getSprints() {
     const sprintsArg = {
       states: ['closed'],
       startAt: 0,
-      x: fromLastXSprints
+      x: this.fromLastXSprints
     };
 
-    if (includeActiveSprints) sprintsArg.states.push('active');
+    if (this.includeActiveSprints) sprintsArg.states.push('active');
 
     const sprints = await this.getLastXSprints(sprintsArg);
 
@@ -95,6 +118,48 @@ class JiraScrumApi extends JiraServiceBase {
 
     return issueDetails;
   }
+
+  async getTransformedSprints() {
+    const sprints = await this.getSprints();
+    const sprintIssues = await this.getIssuesInSprints(
+      sprints.map(s => s.id)
+    );
+
+    const sprintsWithIssues = sprints.map((sprint, i) => ({
+      ...sprint,
+      issues: sprintIssues[i]
+    }));
+
+    return this.transform(sprintsWithIssues);
+  }
+
+  transform(sprints) {
+    let transformedSprints = sprints.map(sprint => {
+      const issues = sprint.issues.map(i => {
+        const sprintData = {
+          currentSprint: i.fields.sprint ? sprintInfo(i.fields.sprint) : null,
+          pastSprints: i.fields.closedSprints
+        };
+  
+        const issue = Object.assign({}, i, { sprintData });
+  
+        return {
+          ...issueTransformer(issue),
+          currentSprint: i.fields.sprint ? sprintInfo(i.fields.sprint) : null,
+          pastSprints: i.fields.closedSprints
+            ? this.sprintBlacklistFilter(i.fields.closedSprints.map(sprintInfo))
+            : []
+        };
+      });
+  
+      return {
+        ...sprintInfo(sprint),
+        issues
+      };
+    });
+  
+    return transformedSprints;
+  };
 }
 
 module.exports = JiraScrumApi;

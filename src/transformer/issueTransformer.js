@@ -50,15 +50,21 @@ function extractPointsInTime(issue) {
   histories.forEach(h => {
     h.items.forEach(history => {
       const { fromString, toString, field } = history;
-      const sprint = issue.sprintData.currentSprint || issue.sprintData.pastSprints[0];
 
       if (field !== 'status') {
         return;
       }
 
-      if (fromString === JIRA_STATUSES.Open && toString === JIRA_STATUSES.InProgress &&
-        isDateBetween(h.created, sprint.startDate, sprint.endDate)) {
-        pointsInTime.cycleTimeStart = asDatetime(h.created);
+      if (fromString === JIRA_STATUSES.Open && toString === JIRA_STATUSES.InProgress ) {
+
+        const sprint = issue.sprintData && (issue.sprintData.currentSprint || issue.sprintData.pastSprints[0]);
+
+        if(!sprint){
+          pointsInTime.cycleTimeStart = asDatetime(h.created);
+        } else if(isDateBetween(h.created, sprint.startDate, sprint.endDate)){
+          pointsInTime.cycleTimeStart = asDatetime(h.created);
+        }
+        
       }
 
       if (toString === JIRA_STATUSES.Resolved) {

@@ -1,6 +1,10 @@
 require('dotenv').config();
-const config = require('./config');
-const sprintBlacklistFilter = require('./filters/sprintBlacklist');
+const {
+  jiraBaseConfig, 
+  kanbanConfig, 
+  scrumConfig,
+  JIRA_BOARD_TYPE
+} = require('./config');
 const JiraScrumApi = require('./jira/JiraScrumApi');
 const JiraKanbanApi = require('./jira/JiraKanbanApi');
 const metricsService = require('./metrics');
@@ -8,11 +12,6 @@ const writeReport = require('./writeReport');
 
 console.log('Initializing...');
 
-const args = [
-  config.JIRA_BOARD_TYPE,
-  config.JIRA_ENABLE_ACTIVE_SPRINT,
-  config.JIRA_SPRINTS
-];
 
 (async () => {
   try {
@@ -20,42 +19,26 @@ const args = [
 
     let metricsInput;
 
-    const boardType = args[0];
+    const boardType = JIRA_BOARD_TYPE;
     switch (boardType) {
       case 'scrum': {
         const jiraService = new JiraScrumApi({
-          ...config,
-          sprintBlacklistFilter
-        });
-        const [includeActiveSprints, fromLastXSprints] = args.slice(1);
-
-        const sprints = await jiraService.getSprints({
-          fromLastXSprints: Number(fromLastXSprints),
-          includeActiveSprints: includeActiveSprints === '1'
+          ...jiraBaseConfig,
+          ...scrumConfig,
         });
 
-        const sprintIssues = await jiraService.getIssuesInSprints(
-          sprints.map(s => s.id)
-        );
-
-        const sprintsWithIssues = sprints.map((sprint, i) => ({
-          ...sprint,
-          issues: sprintIssues[i]
-        }));
-
-        metricsInput = sprintsWithIssues;
+        metricsInput = await jiraService.getTransformedSprints();
 
         break;
       }
       case 'kanban': {
-        const jiraService = new JiraKanbanApi(config);
-
-        const [fromXAgo] = args.slice(1);
-        const issues = await jiraService.getIssues({
-          fromXAgo
+        const jiraService = new JiraKanbanApi({
+          ...jiraBaseConfig,
+          ...kanbanConfig
         });
 
-        metricsInput = issues;
+
+        metricsInput = await jiraService.getTransformedIssues();
         break;
       }
       default:
