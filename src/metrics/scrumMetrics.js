@@ -1,20 +1,23 @@
 const calculateGenericMetrics = require('./genericMetrics');
 const {
   extractResolvedIssues,
+  extractResolvedIssuesOnSprint,
   extractNonSubTasksIssues,
+  extractSpikeIssues,
   humanFriendlyTimeFormat
 } = require('./helpers');
 const { meanBy } = require('lodash');
 
-function calculateVelocity(issues) {
+function calculateVelocity(sprint) {
+  const { issues, completeDate } = sprint;
   const nonSubTasksIssues = extractNonSubTasksIssues(issues);
-  const resolvedIssues = extractResolvedIssues(nonSubTasksIssues);
+  const filteredIssues = extractSpikeIssues(nonSubTasksIssues);
+  resolvedIssues = extractResolvedIssuesOnSprint(filteredIssues, completeDate);
 
   const velocity = resolvedIssues.reduce(
     (acc, currentValue) => acc + currentValue.estimatedSize,
     0
   );
-
   return velocity;
 }
 
@@ -58,12 +61,10 @@ function calculateOverallMetrics(sprintMetrics) {
 
 function calculateScrumMetrics(sprint) {
   const { issues } = sprint;
-
   const totalIssues = extractNonSubTasksIssues(issues);
   const resolvedIssues = extractResolvedIssues(totalIssues);
-
   const sprintMetrics = {
-    velocity: calculateVelocity(issues),
+    velocity: calculateVelocity(sprint),
     objetiveAccomplished: calculateObjetiveAccomplished(sprint),
     finishedPercentage: resolvedIssues.length / totalIssues.length,
     carriedOnIssues: calculateCarriedOnIssues(totalIssues),
