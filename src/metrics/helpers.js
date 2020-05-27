@@ -44,9 +44,27 @@ function extractNonSubTasksIssues(issues) {
   return issues.filter(issue => issue.issueType !== 'Sub-task');
 }
 
+function extractSpikeIssues(issues) {
+  return issues.filter(issue => issue.issueType !== 'Spike');
+}
+
 function extractResolvedIssues(issues) {
   return issues.filter(issue => issue.status === JIRA_STATUSES.Resolved);
 }
+
+function extractResolvedIssuesOnSprint(issues, completeDate) {
+  const sprintCompleteDate = new Date(completeDate);
+  const filtered = issues.filter((issue) => {
+    let leadTimeStopMoment = moment(issue.leadTimeStop, 'DD/MM/YYYY HH:mm:ss');
+    return (
+        issue.status === JIRA_STATUSES.Resolved &&
+        leadTimeStopMoment.isSameOrBefore(sprintCompleteDate)
+      );
+  });
+
+  return filtered;
+}
+
 function calculateTotalIssuesByStatus(issues, status) {
   const accountableIssues = extractNonSubTasksIssues(issues);
   const totalIssuesByStatus = accountableIssues.reduce((acc, currentValue) => {
@@ -61,7 +79,9 @@ function calculateTotalIssuesByStatus(issues, status) {
 module.exports = {
   calculateTotalIssuesByStatus,
   extractResolvedIssues,
+  extractResolvedIssuesOnSprint,
   extractNonSubTasksIssues,
+  extractSpikeIssues,
   calculateTotalIssuesByIssueType,
   timeDifference,
   humanFriendlyTimeFormat,
